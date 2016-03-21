@@ -1,2 +1,4 @@
 cosi.yaml
 node_modules/
+
+docker/brokerca.crt

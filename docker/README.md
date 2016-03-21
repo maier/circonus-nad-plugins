@@ -18,6 +18,12 @@ sudo docker pull redis
 sudo docker run --name redis -d redis
 ```
 
+```sh
+cd /vagrant/docker
+/opt/node/bin/npm install
+/opt/node/bin/node events.js
+```
+
 ## install
 
 1. copy contents of docker directory to `/etc/circonus/etc/node_agent.d/docker`
@@ -39,11 +45,11 @@ docker events sent to an httptrap check as text metrics.
 
 `/opt/circonus/etc/docker.json`
 
-Default configuraiton uses config.docker: null which results in defaults settings being pulled from the environment (e.g. DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH) or using the default Docker socket `/var/run/docker.sock`.
+Default configuraiton uses `config.docker: null` resulting in default settings being pulled from the environment (e.g. DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH) or using the default Docker socket `/var/run/docker.sock`.
 
 ```json
 {
-  docker: {
+  "docker": {
     "socketPath": "",
     "protocol": "",
     "host": "",
@@ -52,16 +58,16 @@ Default configuraiton uses config.docker: null which results in defaults setting
     "key": "",
     "cert": "",
     "ca": """,
-    "timeout": ,
+    "timeout": 15,
     "checkSeverIdentity": true
   },
-  circonus: {
-    checkURL: "",
-    brokerCACertFile: ""
+  "circonus": {
+    "checkURL": "",
+    "brokerCACertFile": ""
   }
 }
 ```
 
-config.docker should be null or a valid configuration for connecting to Docker. See [docker-modem](https://github.com/apocas/docker-modem) for config.docker settings/implementation details. If config.circonus.brokerCACertFile is not provided the default Circonus public broker certificate will be used. [http://login.circonus.com/pki/ca.crt](http://login.circonus.com/pki/ca.crt) (e.g. `curl http://login.circonus.com/pki/ca.crt -o brokerca.crt`)
+`config.docker` should be null or a valid configuration for connecting to Docker. See [docker-modem](https://github.com/apocas/docker-modem) for `config.docker` settings/implementation details. If `config.circonus.brokerCACertFile` is not provided the default Circonus public broker certificate will be used. [http://login.circonus.com/pki/ca.crt](http://login.circonus.com/pki/ca.crt) (e.g. `curl http://login.circonus.com/pki/ca.crt -o brokerca.crt`)
 
-The _events_ module **requires** config.circonus.checkURL. 
+The _events_ module **requires** `config.circonus.checkURL`. 

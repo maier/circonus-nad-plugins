@@ -57,7 +57,7 @@ Default configuraiton uses `config.docker: null` resulting in default settings b
     "version": "",
     "key": "",
     "cert": "",
-    "ca": """,
+    "ca": "",
     "timeout": 15,
     "checkSeverIdentity": true
   },

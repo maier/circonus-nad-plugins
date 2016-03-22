@@ -23,9 +23,9 @@ module.exports = class Stats {
                 return cb(new Error("No Docker containers running."));
             }
 
-            //for (const container of containers) {
             for (let i = 0; i < containers.length; i++) {
                 const container = containers[i];
+
 
                 const opts = {
                     path: `/containers/${container.Id}/stats?`,
@@ -51,7 +51,7 @@ module.exports = class Stats {
                     "tx_dropped"
                 ];
 
-                const metricPrefix = `${container.Names[0].substr(1)}`;
+                const metricPrefix = `${container.Image}\`${container.Names[0].substr(1)}`;
 
                 self.docker.dial(opts, (err2, stats) => {
                     if (err2) {
@@ -59,16 +59,15 @@ module.exports = class Stats {
                     }
 
                     // memory
-                    metrics[`${metricPrefix}.memory.usage`] = stats.memory_stats.usage;
-                    metrics[`${metricPrefix}.memory.max_usage`] = stats.memory_stats.max_usage;
+                    metrics[`${metricPrefix}\`memory\`usage`] = stats.memory_stats.usage;
+                    metrics[`${metricPrefix}\`memory\`max_usage`] = stats.memory_stats.max_usage;
 
                     // cpu
-                    metrics[`${metricPrefix}.cpu.total`] = stats.cpu_stats.cpu_usage.total_usage;
-                    metrics[`${metricPrefix}.cpu.kernel`] = stats.cpu_stats.cpu_usage.usage_in_kernelmode;
-                    metrics[`${metricPrefix}.cpu.user`] = stats.cpu_stats.cpu_usage.usage_in_usermode;
+                    metrics[`${metricPrefix}\`cpu\`total`] = stats.cpu_stats.cpu_usage.total_usage;
+                    metrics[`${metricPrefix}\`cpu\`kernel`] = stats.cpu_stats.cpu_usage.usage_in_kernelmode;
+                    metrics[`${metricPrefix}\`cpu\`user`] = stats.cpu_stats.cpu_usage.usage_in_usermode;
 
                     // block io
-                    // for (const ioStat in stats.blkio_stats) {
                     const ioStatKeys = Object.keys(stats.blkio_stats);
 
                     for (let j = 0; j < ioStatKeys.length; j++) {
@@ -77,11 +76,10 @@ module.exports = class Stats {
                         if (stats.blkio_stats.hasOwnProperty(ioStat)) {
                             const stat = stats.blkio_stats[ioStat];
 
-                            // for (const item of stat) {
                             for (let k = 0; k < stat.length; k++) {
                                 const item = stat[k];
 
-                                metrics[`${metricPrefix}.${ioStat}.${item.major}-${item.minor}.${item.op.toLowerCase()}`] = item.value;
+                                metrics[`${metricPrefix}\`${ioStat}\`${item.major}-${item.minor}\`${item.op.toLowerCase()}`] = item.value;
                             }
                         }
                     }
@@ -100,7 +98,7 @@ module.exports = class Stats {
                             for (let k = 0; k < netStats.length; k++) {
                                 const item = netStats[k];
 
-                                metrics[`${metricPrefix}.${iface}.${item}`] = stat[item];
+                                metrics[`${metricPrefix}\`${iface}\`${item}`] = stat[item];
                             }
                         }
                     }

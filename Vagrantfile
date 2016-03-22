@@ -45,5 +45,6 @@ Vagrant.configure(2) do |config|
     curl -sSL "https://nodejs.org/download/release/v${node_ver}/${node_tgz}" -o "/opt/node/${node_tgz}"
     echo "unpacking into /opt/node"
     tar -C /opt/node --strip-components=1 -zxf "/opt/node/${node_tgz}"
+    [[ $(grep -c PATH /home/vagrant/.bashrc) -eq 0 ]] && echo 'PATH="$PATH:/opt/node/bin"' >> /home/vagrant/.bashrc
   SHELL
 end

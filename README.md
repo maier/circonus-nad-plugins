@@ -15,6 +15,8 @@ cp example.cosi.yaml cosi.yaml
 vi cosi.yaml
 # edit settings and save
 vagrant up
+vagrant ssh
+$ cd /vagrant
 ```
 
 > Metric value note: (ref: [resmon docs](http://labs.omniti.com/labs/resmon/wiki/ModuleDevelopment))
@@ -29,4 +31,4 @@ vagrant up
 > * `n` - double
 > * `s` - string
 > 
-> Applies to text output for NAD and [httptrap](https://maier.circonus.com/user/docs/Data/CheckTypes#HTTPTrap)
+> Applies to metric output for NAD plugins, as well as, metrics submitted via [httptrap](https://maier.circonus.com/user/docs/Data/CheckTypes#HTTPTrap).

@@ -1,4 +1,7 @@
 cosi.yaml
 node_modules/
+.modules
+build/
 
-docker/brokerca.crt
+docker/circonus-docker.tar.gz
+

@@ -6,9 +6,16 @@
 
 cd ..
 vagrant up
-vagrant ssh -c "sudo yum install -y docker-engine"
-vagrant ssh -c "sudo service docker start"
+vagrant ssh -c "sudo yum install -y docker-engine && service docker start"
+# WARNING - see note below
+vagrant ssh -c "sudo usermod -G docker nobody"
 ```
+
+> **Security Note**: There are security implications with regards to _who_ can
+access the Docker API. User _nobody_ is added to the _docker_ group above for
+the purposes of _demonstration_ **only**. It is not a good idea to give
+the user _nobody_ access to the Docker API as **anything** running as that user
+would have full access to **control** Docker. (start/stop containers, manipulate images, etc.)
 
 get a sample container up and running to have something output for testing:
 
@@ -18,39 +25,62 @@ sudo docker pull redis
 sudo docker run --name redis -d redis
 ```
 
+## building
+
 ```sh
-cd /vagrant/docker
-/opt/node/bin/npm install
-/opt/node/bin/node events.js
+vagrant ssh
+# once in VM, set node path accordingly
+$ export PATH="/opt/node/bin:$PATH"
+# ... or ...
+$ export PATH="/opt/circonus/embedded/bin:$PATH"
+
+$ cd /vagrant/docker
+$ npm install
+$ make package
 ```
 
 ## install
 
-1. copy contents of docker directory to `/etc/circonus/etc/node_agent.d/docker`
-1. change to desination directory and run `/opt/circonus/embedded/bin/npm install`
-1. create a config file, if needed, in `/opt/circonus/etc/docker.json`
-1. create a symlink from `stats.js` to `../stats.js`
+In VM for development:
+
+```sh
+vagrant ssh
+# once in VM, set node path accordingly
+$ export PATH="/opt/node/bin:$PATH"
+# ... or ...
+$ export PATH="/opt/circonus/embedded/bin:$PATH"
+
+$ cd /vagrant/docker
+$ npm install
+$ make package && make install
+```
+
+Non-development:
+
+1. Build the package
+1. Transfer package to system
+1. Unpack into `/etc/circonus/etc/node-agent.d/docker`
+1. Create a symlink (from `docker/stats.js` or `docker/events.js`) in `/etc/circonus/etc/node-agent.d`. The base name of the symlink will be used as the first part of the metric names. (e.g. if using only stats, `ln -s docker/stats.js dockerstats.js`, NAD would add the docker container stats all prefixed with **dockerstats**.)
 
 ## stats
 
-metrics from running containers.
+metrics from running containers. cpu, memory, block io, and network.
 
 
 ## events
 
-docker events sent to an httptrap check as text metrics.
+docker events. note, events are pulled since the last request, or 60 seconds if it's the first request.
 
 
 ## config
 
 `/opt/circonus/etc/docker.json`
 
-Default configuraiton uses `config.docker: null` resulting in default settings being pulled from the environment (e.g. DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH) or using the default Docker socket `/var/run/docker.sock`.
+Default configuration is `null` resulting in default settings being pulled from the environment (e.g. DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH) or using the default Docker socket `/var/run/docker.sock`. See [docker-modem](https://github.com/apocas/docker-modem) for Docker API connection settings/implementation details.
 
 ```json
 {
-  "docker": {
-    "socketPath": "",
+    "socketPath": "/var/run/docker.sock",
     "protocol": "",
     "host": "",
     "port": "",
@@ -60,14 +90,5 @@ Default configuraiton uses `config.docker: null` resulting in default settings b
     "ca": "",
     "timeout": 15,
     "checkSeverIdentity": true
-  },
-  "circonus": {
-    "checkURL": "",
-    "brokerCACertFile": ""
-  }
 }
 ```
-
-`config.docker` should be null or a valid configuration for connecting to Docker. See [docker-modem](https://github.com/apocas/docker-modem) for `config.docker` settings/implementation details. If `config.circonus.brokerCACertFile` is not provided the default Circonus public broker certificate will be used. [http://login.circonus.com/pki/ca.crt](http://login.circonus.com/pki/ca.crt) (e.g. `curl http://login.circonus.com/pki/ca.crt -o brokerca.crt`)
-
-The _events_ module **requires** `config.circonus.checkURL`. 

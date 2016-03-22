@@ -1,56 +1,40 @@
+/*eslint-env node, es6 */
+/*eslint-disable global-require, callback-return, no-param-reassign */
+
 "use strict";
 
-const Events = require("./events/index.js");
+const Events = require("./lib/events");
 
-let config = {
-	docker: null,
-	circonus: {
-		checkURL: "https://trap.noit.circonus.net/module/httptrap/5f92b33c-5d53-4695-ab4b-555f0da1e833/c900cb759ab3caa4"
-	}
-};
-try {
-	config = require("/opt/circonus/etc/docker-events.json");
-} catch (err) {
-	if (err.code !== "MODULE_NOT_FOUND") {
-		console.error(err);
-		return;
-	}
-}
+class DockerEvents {
+    constructor() {
+        this.config = null;
 
-
-function fetch(opts) {
-    const events = new Events(opts.docker);
-    events.getEvents((err, data) => {
-        if (err) {
-            console.error(err);
-			return;
+        try {
+            this.config = require("/opt/circonus/etc/docker.json");
+        } catch (err) {
+            if (err.code !== "MODULE_NOT_FOUND") {
+                console.error(err);
+                return;
+            }
         }
+    }
 
-        const list = data.split('\n').
-			filter((item) => {
-				return item.length > 0;
-			}).
-			map((item) => {
-				return JSON.parse(item);
-			});
+    run(d, cb, req, args, instance) {
+        const containerEvents = new Events(this.config);
 
-		let numEvents = 0;
-        const metrics = [];
+        containerEvents.getEvents((err, eventMetrics) => {
+            if (err) {
+                cb(d, { "docker`api.error": `${err}` });
+                d.runnint = false;
+                console.error(err);
+                return;
+            }
 
-        for (const item of list) {
-            metrics.push({[`docker.${item.Type}.${item.Action}`]:`${item.Actor.Attributes.name}${item.Actor.Attributes.image ? ", image "+item.Actor.Attributes.image : ""}`});
-			numEvents++;
-        }
-
-		metrics.push({"docker.num_events": list.length});
-        send(opts, metrics);
-    });
+            cb(d, eventMetrics, instance);
+            d.running = false;
+            return;
+        });
+    }
 }
 
-function send(opts, metrics) {
-    console.dir(metrics);
-	console.log(opts.circonus.checkURL);
-    // post to circonus httptrap check
-}
-
-fetch(config);
+module.exports = DockerEvents;

@@ -1,3 +1,6 @@
+/*eslint-env node, es6 */
+/*eslint-disable no-magic-numbers */
+
 "use strict";
 
 const Docker = require("docker-modem");
@@ -10,7 +13,8 @@ module.exports = class Stats {
     getStats(cb) {
         const self = this;
         const metrics = {};
-        this._getContainers((err, containers) => {
+
+        this._getContainers((err, containers) => { //eslint-disable-line consistent-return
             if (err) {
                 return cb(err);
             }
@@ -19,7 +23,10 @@ module.exports = class Stats {
                 return cb(new Error("No Docker containers running."));
             }
 
-            for (const container of containers) {
+            //for (const container of containers) {
+            for (let i = 0; i < containers.length; i++) {
+                const container = containers[i];
+
                 const opts = {
                     path: `/containers/${container.Id}/stats?`,
                     method: "GET",
@@ -41,15 +48,14 @@ module.exports = class Stats {
                     "tx_bytes",
                     "tx_packets",
                     "tx_errors",
-                    "tx_dropped",
+                    "tx_dropped"
                 ];
 
                 const metricPrefix = `${container.Names[0].substr(1)}`;
 
-                self.docker.dial(opts, (err, stats) => {
-                    if (err) {
-                        console.error(err);
-                        return;
+                self.docker.dial(opts, (err2, stats) => {
+                    if (err2) {
+                        return cb(err2);
                     }
 
                     // memory
@@ -62,31 +68,53 @@ module.exports = class Stats {
                     metrics[`${metricPrefix}.cpu.user`] = stats.cpu_stats.cpu_usage.usage_in_usermode;
 
                     // block io
-                    for (const ioStat in stats.blkio_stats) {
-                        const stat = stats.blkio_stats[ioStat];
-                        for (const item of stat) {
-                            metrics[`${metricPrefix}.${ioStat}.${item.major}-${item.minor}.${item.op.toLowerCase()}`] = item.value;
+                    // for (const ioStat in stats.blkio_stats) {
+                    const ioStatKeys = Object.keys(stats.blkio_stats);
+
+                    for (let j = 0; j < ioStatKeys.length; j++) {
+                        const ioStat = ioStatKeys[j];
+
+                        if (stats.blkio_stats.hasOwnProperty(ioStat)) {
+                            const stat = stats.blkio_stats[ioStat];
+
+                            // for (const item of stat) {
+                            for (let k = 0; k < stat.length; k++) {
+                                const item = stat[k];
+
+                                metrics[`${metricPrefix}.${ioStat}.${item.major}-${item.minor}.${item.op.toLowerCase()}`] = item.value;
+                            }
                         }
                     }
 
                     // network
-                    for (const iface in stats.networks) {
-                        const stat = stats.networks[iface];
-                        for (const item of netStats) {
-                            metrics[`${metricPrefix}.${iface}.${item}`] = stat[item];
+                    // for (const iface in stats.networks) {
+                    const ifaceList = Object.keys(stats.networks);
+
+                    for (let j = 0; j < ifaceList.length; j++) {
+                        const iface = ifaceList[j];
+
+                        if (stats.networks.hasOwnProperty(iface)) {
+                            const stat = stats.networks[iface];
+
+                            // for (const item of netStats) {
+                            for (let k = 0; k < netStats.length; k++) {
+                                const item = netStats[k];
+
+                                metrics[`${metricPrefix}.${iface}.${item}`] = stat[item];
+                            }
                         }
                     }
+
+                    return cb(null, metrics);
+
                 });
             }
-            return cb(null, metrics);
         });
     }
 
     _getContainers(cb) {
-        const self = this;
-
         const opts = {
-            path: '/containers/json?',
+            path: "/containers/json?",
             method: "GET",
             options: {
                 status: "running"

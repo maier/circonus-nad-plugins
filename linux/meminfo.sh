@@ -42,8 +42,13 @@ END {
     swapTotal=list["SwapTotal"]
     swapFree=list["SwapFree"]
     swapUsed=swapTotal - swapFree
-    swapFreePct=swapFree / swapTotal
-    swapUsedPct=swapUsed / swapTotal
+    if (swapTotal > 0) {
+	    swapFreePct=swapFree / swapTotal
+	    swapUsedPct=swapUsed / swapTotal
+    } else {
+	    swapFreePct=0
+	    swapUsedPct=0
+    }
 
     for (key in list) {
         if (key != "") {

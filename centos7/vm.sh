@@ -23,7 +23,10 @@ SWAP=($(free $units | grep ^Swap:))
 SWAP_TOTAL=${SWAP[1]}
 SWAP_USED=${SWAP[2]}
 SWAP_FREE=${SWAP[3]}
-SWAP_PERC=$(awk -v u=$SWAP_USED -v t=$SWAP_TOTAL 'BEGIN { print u / t }')
+SWAP_PERC=0
+if [[ $SWAP_TOTAL -gt 0 ]]; then
+	SWAP_PERC=$(awk -v u=$SWAP_USED -v t=$SWAP_TOTAL 'BEGIN { print u / t }')
+fi
 
 # pgfault is min+maj
 PG_FAULTS=$(grep ^pgfault /proc/vmstat | awk '{ print $2 }')
